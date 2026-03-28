@@ -93,14 +93,14 @@ def main():
     # 1. 价值迭代
     vi_agent = ValueIterationAgent(train_env, gamma=GAMMA, theta=THETA)
     # 2. 标准策略迭代 (truncated_step=None)
-    pi_agent = PolicyIterationAgent(train_env, gamma=GAMMA, truncated_step=None, theta=THETA)
+    #pi_agent = PolicyIterationAgent(train_env, gamma=GAMMA, truncated_step=None, theta=THETA)
     # 3. 截断策略迭代 (这里设定截断步数为 10)
-    tpi_agent = PolicyIterationAgent(train_env, gamma=GAMMA, truncated_step=10, theta=THETA)
+    #tpi_agent = PolicyIterationAgent(train_env, gamma=GAMMA, truncated_step=10, theta=THETA)
 
     # 分别执行训练
     run_task("Value Iteration", vi_agent, THETA, holes, ends)
-    run_task("Standard Policy Iteration", pi_agent, THETA, holes, ends)
-    run_task("Truncated Policy Iteration (k=10)", tpi_agent, THETA, holes, ends)
+    #run_task("Standard Policy Iteration", pi_agent, THETA, holes, ends)
+    #run_task("Truncated Policy Iteration (k=10)", tpi_agent, THETA, holes, ends)
 
     train_env.close()
 
@@ -109,7 +109,7 @@ def main():
     # 使用 render_mode="human"，开启 GUI 窗口观察训练成果
     # ======================================================
     success_rate = evaluate_agent(
-        tpi_agent,
+        vi_agent,
         is_slippery=IS_SLIPPERY,
         map_name=MAP_NAME,
         episodes=EVAL_EPISODES,
@@ -125,7 +125,7 @@ def main():
 
     for _ in range(DEMO_EPISODES):
         state, _ = demo_env.reset()
-        start_state = sample_start_state(tpi_agent, holes, ends)
+        start_state = sample_start_state(vi_agent, holes, ends)
         if start_state is not None:
             state = demo_env.set_state(start_state)
         done = False
@@ -137,7 +137,7 @@ def main():
             if state in visited:
                 break
             visited.add(state)
-            action = tpi_agent.get_action(state)
+            action = vi_agent.get_action(state)
             state, reward, term, trunc, _ = demo_env.step(action)
             total_reward += reward
             step_count += 1
