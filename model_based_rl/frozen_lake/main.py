@@ -60,6 +60,16 @@ def evaluate_agent(agent, is_slippery, map_name, episodes, max_steps):
     env.close()
     return success / episodes if episodes > 0 else 0.0
 
+def sample_start_state(agent, holes, ends):
+    v = np.asarray(agent.v, dtype=float)
+    candidates = [
+        s for s in range(agent.n_states)
+        if (v[s] > 0) and (s not in holes) and (s not in ends)
+    ]
+    if not candidates:
+        return None
+    return int(np.random.choice(candidates))
+
 def main():
     # --- 全局配置 ---
     GAMMA = 0.9
@@ -99,7 +109,7 @@ def main():
     # 使用 render_mode="human"，开启 GUI 窗口观察训练成果
     # ======================================================
     success_rate = evaluate_agent(
-        vi_agent,
+        tpi_agent,
         is_slippery=IS_SLIPPERY,
         map_name=MAP_NAME,
         episodes=EVAL_EPISODES,
@@ -115,6 +125,9 @@ def main():
 
     for _ in range(DEMO_EPISODES):
         state, _ = demo_env.reset()
+        start_state = sample_start_state(tpi_agent, holes, ends)
+        if start_state is not None:
+            state = demo_env.set_state(start_state)
         done = False
         total_reward = 0
         step_count = 0
@@ -124,7 +137,7 @@ def main():
             if state in visited:
                 break
             visited.add(state)
-            action = vi_agent.get_action(state)
+            action = tpi_agent.get_action(state)
             state, reward, term, trunc, _ = demo_env.step(action)
             total_reward += reward
             step_count += 1

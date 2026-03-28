@@ -38,6 +38,10 @@ class LakeEnv:
         """重置环境，返回初始状态"""
         return self.gym_env.reset()
 
+    def set_state(self, state):
+        self.env.s = int(state)
+        return int(state)
+
     def step(self, action):
         """执行动作，返回 (next_state, reward, terminated, truncated, info)"""
         return self.gym_env.step(action)
