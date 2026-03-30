@@ -11,7 +11,7 @@ from gymnasium.core import RenderFrame, ActType, ObsType
 
 #随机数生成器将产生相同的随机数序列, 这在需要可重复结果的情况下非常有用
 np.random.seed(1)
-import render
+from . import render
 
 
 def arr_in_list(array, _list):
@@ -53,7 +53,7 @@ class GridEnv(gym.Env):
             self.forbidden_location.append(np.array(fob))
         self.target_location = np.array(target)
         # 初始化 动作空间 观测空间
-        self.action_space, self.action_space_size = spaces.Discrete(5,seed = 42), spaces.Discrete(5).n  #seed = 42, “42 是 “生命、宇宙和一切终极问题的答案”
+        self.action_space, self.action_space_size = spaces.Discrete(5,seed = 1), spaces.Discrete(5).n  #动作空间：0-up 1-right 2-down 3-left 4-stay
         print("self.action_space:{}, self.action_space_size:{}".format(self.action_space, self.action_space_size))  #从0开始索引
 
         # reward_list index convention (used by Rsa):
