@@ -27,7 +27,7 @@ class MC_EG:
         self.action_space_size = env.action_space_size
         self.state_space_size = env.size**2
         self.reward_list = env.reward_list
-        self.epsilon=0.05
+        self.epsilon=0.8
         
         # 初始化状态价值和 Q 表
         self.state_value = np.zeros(shape=self.state_space_size)
@@ -85,23 +85,16 @@ class MC_EG:
             
         return episode
 
-    def MC_EG(self, max_step=30, iteration=500):                      
-            for i in tqdm(range(iteration), desc="MC-EG Training"):
-                if i > np.double(2*(iteration)/3):
-                    self.epsilon=0.01
-                elif i> np.double(1*(iteration)/3) and i<= np.double(2*(iteration)/3):
-                    self.epsilon=0.1
-                elif i>0 and i<= np.double(1*(iteration)/3):
-                    self.epsilon=0.3
-                sa_pair_count = np.zeros(shape=(self.state_space_size, self.action_space_size), dtype=int)
-                # 1. 随机空投起点和第一个动作
-                s0 = np.random.randint(0, self.state_space_size)
-                a0 = np.random.randint(0, self.action_space_size)
-                
+    def MC_EG(self, max_step=30, iteration=500):       
+            sa_pair_count = np.zeros(shape=(self.state_space_size, self.action_space_size), dtype=int)
+            return_of_sa_pair =  np.zeros(shape=(self.state_space_size, self.action_space_size), dtype=np.double)
+            for _ in tqdm(range(iteration), desc="MC-EG Training"):
+                #动态更新epsilon值，随着训练的进行逐渐减少探索
+                self.epsilon = max(0.1, self.epsilon * 0.9)
+                s0= np.random.randint(0, self.state_space_size)
+                a0 = np.random.choice(np.arange(self.action_space_size))
                 episode = self.obtain_episode(self.policy, s0, a0, max_step)
-                
                 G = 0
-                return_of_sa_pair =  np.zeros(shape=(self.state_space_size, self.action_space_size), dtype=np.double)
                 # 2. 逆向计算 Return (Every-visit 策略)
                 for t in reversed(range(len(episode))):
                     state = episode[t]['state']
@@ -115,7 +108,7 @@ class MC_EG:
                     return_of_sa_pair[state, action] += G
                     self.qsa_value[state, action] = return_of_sa_pair[state, action] / sa_pair_count[state, action]
                     
-                    # 4. policy improvement: 更新策略,c采用epsilon_greedy
+                    # 4. policy improvement: 更新策略,采用epsilon_greedy
                     best_action = np.argmax(self.qsa_value[state, :])
                     self.policy[state, :] = np.double(self.epsilon/5)
                     self.policy[state, best_action] = np.double(1-(4*self.epsilon)/5)
@@ -139,7 +132,7 @@ if __name__ == "__main__":
     
     # 3. 运行 MC ES 算法
     print("开始训练...")
-    final_v = solver.MC_EG(max_step=300, iteration=2000)
+    final_v = solver.MC_EG(max_step=200, iteration=15000)
     
     # 4. 可视化结果
     print("训练完成，正在渲染...")

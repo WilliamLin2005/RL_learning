@@ -77,8 +77,6 @@ class MC_ES:
             
             episode.append({"state": state, "action": action, "reward": reward})
             
-            if done:
-                break
             
             # 接力更新状态和动作
             state = next_state
@@ -87,13 +85,12 @@ class MC_ES:
         return episode
 
     def MC_ES(self, max_step=30, iteration=500):
-            for i in tqdm(range(iteration), desc="MC-ES Training"):
+            sa_pair_count = np.zeros(shape=(self.state_space_size, self.action_space_size), dtype=int)
+            return_of_sa_pair = np.ones(shape=(self.state_space_size, self.action_space_size), dtype=float)*5.0
+            for _ in tqdm(range(iteration), desc="MC-ES Training"):
                 # 1. Exploring Starts: 随机空投起点和第一个动作
-                sa_pair_count = np.zeros(shape=(self.state_space_size, self.action_space_size), dtype=int)
-                return_of_sa_pair = np.zeros(shape=(self.state_space_size, self.action_space_size), dtype=float)
                 s0 = np.random.randint(0, self.state_space_size)
                 a0 = np.random.randint(0, self.action_space_size)
-                
                 episode = self.obtain_episode(self.policy, s0, a0, max_step)
                 
                 G = 0
@@ -105,10 +102,16 @@ class MC_ES:
                     
                     G = self.gamma * G + reward
                     
+                    is_first_visit = True
+                    for k in range(t):
+                        if episode[k]['state'] == state and episode[k]['action'] == action:
+                            is_first_visit = False
+                            break
                     # 3. policy evaluation: 更新 Q 表
-                    sa_pair_count[state, action] += 1
-                    return_of_sa_pair[state, action] += G
-                    self.qsa_value[state, action] = return_of_sa_pair[state, action] / sa_pair_count[state, action]
+                    if is_first_visit:
+                        sa_pair_count[state, action] += 1
+                        return_of_sa_pair[state, action] += G
+                        self.qsa_value[state, action] = return_of_sa_pair[state, action] / sa_pair_count[state, action]
                     
                     # 4. policy improvement: 更新策略
                     best_action = np.argmax(self.qsa_value[state, :])
@@ -135,7 +138,7 @@ if __name__ == "__main__":
     
     # 3. 运行 MC ES 算法
     print("开始训练...")
-    final_v = solver.MC_ES(max_step=100, iteration=5000)
+    final_v = solver.MC_ES(max_step=120, iteration=20000)
     
     # 4. 可视化结果
     print("训练完成，正在渲染...")
