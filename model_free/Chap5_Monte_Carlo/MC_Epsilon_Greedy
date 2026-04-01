@@ -19,7 +19,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from RL_learning.model_free.envs.grid_env import GridEnv
 
-#MC_EXPLORING STARTS
+#MC_EXPLORING STARTS 调参的哲学
 class MC_EG:
     def __init__(self, env):
         self.gamma = 0.9
