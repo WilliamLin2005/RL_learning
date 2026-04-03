@@ -17,7 +17,7 @@ import time
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-from RL_learning.model_free.envs.grid_env import GridEnv
+from RL_learning.model_free.envs.grid_env_stochastic import GridEnv
 
 #MC_EXPLORING STARTS
 class MC_ES:
@@ -57,7 +57,7 @@ class MC_ES:
                                         size_discount=0.7)
 
     def obtain_episode(self, policy, start_state, start_action, max_step):
-        # 强行空投 Agent 到指定状态
+        # 强行指定 Agent 到状态
         self.env.agent_location = self.env.state2pos(start_state)
         episode = []
         
@@ -78,7 +78,7 @@ class MC_ES:
             episode.append({"state": state, "action": action, "reward": reward})
             
             
-            # 接力更新状态和动作
+            # 更新状态和动作
             state = next_state
             action = next_action
             
@@ -86,15 +86,14 @@ class MC_ES:
 
     def MC_ES(self, max_step=30, iteration=500):
             sa_pair_count = np.zeros(shape=(self.state_space_size, self.action_space_size), dtype=int)
-            return_of_sa_pair = np.ones(shape=(self.state_space_size, self.action_space_size), dtype=float)*5.0
+            return_of_sa_pair = np.zeros(shape=(self.state_space_size, self.action_space_size), dtype=float)
             for _ in tqdm(range(iteration), desc="MC-ES Training"):
-                # 1. Exploring Starts: 随机空投起点和第一个动作
+                # 1. Exploring Starts
                 s0 = np.random.randint(0, self.state_space_size)
                 a0 = np.random.randint(0, self.action_space_size)
                 episode = self.obtain_episode(self.policy, s0, a0, max_step)
-                
                 G = 0
-                # 2. 逆向计算 Return (Every-visit 策略)
+                # 2. 逆向计算 Return (first-visit 策略)
                 for t in reversed(range(len(episode))):
                     state = episode[t]['state']
                     action = episode[t]['action']
@@ -107,13 +106,13 @@ class MC_ES:
                         if episode[k]['state'] == state and episode[k]['action'] == action:
                             is_first_visit = False
                             break
-                    # 3. policy evaluation: 更新 Q 表
+                    # 3. policy evaluation
                     if is_first_visit:
                         sa_pair_count[state, action] += 1
                         return_of_sa_pair[state, action] += G
                         self.qsa_value[state, action] = return_of_sa_pair[state, action] / sa_pair_count[state, action]
                     
-                    # 4. policy improvement: 更新策略
+                    # 4. policy improvement
                     best_action = np.argmax(self.qsa_value[state, :])
                     self.policy[state, :] = 0
                     self.policy[state, best_action] = 1
@@ -138,7 +137,7 @@ if __name__ == "__main__":
     
     # 3. 运行 MC ES 算法
     print("开始训练...")
-    final_v = solver.MC_ES(max_step=120, iteration=20000)
+    final_v = solver.MC_ES(max_step=120, iteration=5000)
     
     # 4. 可视化结果
     print("训练完成，正在渲染...")
