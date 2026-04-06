@@ -14,7 +14,7 @@ class GradientDescent:
             x_sample_mean = np.mean(x_samples, axis=0)
             iterations = 1
             while iterations <= max_iters:
-                alpha_k = 1.0 / iterations
+                alpha_k = 0.5
                 self.w = self.w - alpha_k * (self.w - x_sample_mean)
                 self.w_history.append(self.w.copy())
                 
