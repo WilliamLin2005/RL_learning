@@ -63,35 +63,40 @@ if __name__ == "__main__":
     # --- 1. 参数初始化 ---
     np.random.seed(42)  
     mean_point = np.array([0.0, 0.0])  
-    sigma = 4.0                        
-    total_samples = 2000               # 总样本数
+    sigma = 4.0
+    
+    # A. 生成一个代表“总体”的、非常大的分布
+    population_size = 100000 
+    population_samples = np.random.normal(loc=mean_point, scale=sigma, size=(population_size, 2))
+    
+    # B. 从“总体”中，抽取一个我们真正拥有的、固定的“训练集”
+    training_set_size = 2000 
+    training_indices = np.random.choice(len(population_samples), size=training_set_size, replace=False)
+    training_set = population_samples[training_indices]
+    
     theta = 1e-4                       
     max_plot_iters = 30                
-    
     initial_w = np.array([-20.0, 20.0]) 
 
-    # 生成样本
-    x_samples = np.random.normal(loc=mean_point, scale=sigma, size=(total_samples, 2))
-
-    # --- 2. 运行四种算法 ---
+    # --- 2. 运行四种算法 (全部基于固定的 training_set) ---
     # ① SGD (m=1)
     sgd_solver = GradientDescent(initial_w, sample_size=1)
-    sgd_solver.gradient_step(x_samples, total_samples, theta, mean_point)
+    sgd_solver.gradient_step(training_set, training_set_size, theta, mean_point)
     sgd_history = np.array(sgd_solver.w_history)[:max_plot_iters+1]
 
     # ② MBGD (m=5)
     mbgd5_solver = GradientDescent(initial_w, sample_size=5)
-    mbgd5_solver.gradient_step(x_samples, total_samples, theta, mean_point)
+    mbgd5_solver.gradient_step(training_set, training_set_size, theta, mean_point)
     mbgd5_history = np.array(mbgd5_solver.w_history)[:max_plot_iters+1]
 
     # ③ MBGD (m=50)
     mbgd50_solver = GradientDescent(initial_w, sample_size=50)
-    mbgd50_solver.gradient_step(x_samples, total_samples, theta, mean_point)
+    mbgd50_solver.gradient_step(training_set, training_set_size, theta, mean_point)
     mbgd50_history = np.array(mbgd50_solver.w_history)[:max_plot_iters+1]
 
-    # ④ BGD (m=2000, 即全部样本)
-    bgd_solver = GradientDescent(initial_w, sample_size=total_samples)
-    bgd_solver.gradient_step(x_samples, total_samples, theta, mean_point)
+    # ④ BGD (m=training_set_size)
+    bgd_solver = GradientDescent(initial_w, sample_size=training_set_size)
+    bgd_solver.gradient_step(training_set, training_set_size, theta, mean_point)
     bgd_history = np.array(bgd_solver.w_history)[:max_plot_iters+1]
 
     # --- 3. 计算距离 ---
@@ -103,18 +108,19 @@ if __name__ == "__main__":
     dist_mbgd50 = calc_distances(mbgd50_history, mean_point)
     dist_bgd = calc_distances(bgd_history, mean_point)
 
-    # --- 4. 开始绘图 ---
+    # --- 4. 开始绘图 (已修正变量名和缩进) ---
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
 
     # ================= 子图 1: 2D 轨迹平面图 =================
-    ax1.scatter(x_samples[:100, 0], x_samples[:100, 1], facecolors='none', edgecolors='k', s=30, label='Samples')
+    # 使用 training_set 画散点
+    ax1.scatter(training_set[:100, 0], training_set[:100, 1], facecolors='none', edgecolors='k', s=30, label='Samples')
     ax1.plot(mean_point[0], mean_point[1], 'ko', markerfacecolor='#0072BD', markersize=10, markeredgewidth=2.5, label='Mean')
     
-    # 增加紫色方形代表 BGD
     ax1.plot(sgd_history[:, 0], sgd_history[:, 1], '-d', color='#ED7D31', label='SGD (m=1)', linewidth=1.5, markersize=5)
     ax1.plot(mbgd5_history[:, 0], mbgd5_history[:, 1], '->', color='#77AC30', label='MBGD (m=5)', linewidth=1.5, markersize=6)
     ax1.plot(mbgd50_history[:, 0], mbgd50_history[:, 1], '-*', color='#0072BD', label='MBGD (m=50)', linewidth=1.5, markersize=5)
-    ax1.plot(bgd_history[:, 0], bgd_history[:, 1], '-s', color='#7E2F8E', label=f'BGD (m={total_samples})', linewidth=2, markersize=5)
+    # 使用 training_set_size 更新标签
+    ax1.plot(bgd_history[:, 0], bgd_history[:, 1], '-s', color='#7E2F8E', label=f'BGD (m={training_set_size})', linewidth=2, markersize=5)
 
     ax1.set_xlabel('x', fontsize=12)
     ax1.set_ylabel('y', fontsize=12)
@@ -129,7 +135,7 @@ if __name__ == "__main__":
     ax2.plot(iters_sgd, dist_sgd, '-d', color='#ED7D31', label='SGD (m=1)', linewidth=1.5, markersize=5)
     ax2.plot(iters_mbgd5, dist_mbgd5, '->', color='#77AC30', label='MBGD (m=5)', linewidth=1.5, markersize=6)
     ax2.plot(iters_mbgd50, dist_mbgd50, '-*', color='#0072BD', label='MBGD (m=50)', linewidth=1.5, markersize=5)
-    ax2.plot(iters_bgd, dist_bgd, '-s', color='#7E2F8E', label=f'BGD (m={total_samples})', linewidth=2, markersize=5)
+    ax2.plot(iters_bgd, dist_bgd, '-s', color='#7E2F8E', label=f'BGD (m={training_set_size})', linewidth=2, markersize=5)
 
     ax2.set_xlabel('Iteration step', fontsize=12)
     ax2.set_ylabel('Distance to mean', fontsize=12)
