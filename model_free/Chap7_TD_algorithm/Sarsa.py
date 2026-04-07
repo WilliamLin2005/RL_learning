@@ -18,6 +18,7 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from RL_learning.model_free.envs.grid_env import GridEnv
+import matplotlib.pyplot as plt
 
 #MC_EXPLORING STARTS 调参的哲学
 class SARSA:
@@ -79,6 +80,8 @@ class SARSA:
             return experience
 
     def SARSA(self,max_iter=1000,alpha=0.5):
+        reward_history = []
+        length_history = []
         for episode in tqdm(range(max_iter)):
             self.epsilon = max(0.01, self.epsilon * 0.95)  # 每个 episode 后衰减 epsilon，最低到 0.01
             # 1. 初始化环境，获取初始状态
@@ -89,10 +92,14 @@ class SARSA:
             done = False
             td_error = 0
             iteration = 0
+            total_reward = 0
+            step_count = 0
             while not done:
                 experience = self.obtain_experience(state, action)
                 state, action, reward, next_state, next_action, done = experience['state_t'], experience['action_t'], experience['reward'], experience['state_tp1'], experience['action_tp1'], experience['done']
-                    
+                total_reward += reward
+                step_count += 1
+
                 # 2. 更新 Q 表
                 td_target = reward + self.gamma * self.qsa_value[next_state, next_action] * (1 - done)
                 td_error =  self.qsa_value[state, action]- td_target
@@ -108,13 +115,35 @@ class SARSA:
                 action = next_action
 
                 iteration += 1
-                if iteration>1500:
-                    print("迭代过多，可能进入死循环了，强制结束")
+                if iteration>200:
                     break
-            
-        #根据qsa计算state value
-        self.state_value = np.max(self.qsa_value, axis=1)
-        return self.state_value
+            reward_history.append(total_reward)
+            length_history.append(step_count)   
+          
+        # 训练结束，计算 state value 
+        self.state_value = np.sum(self.policy * self.qsa_value, axis=1)
+        return self.state_value, reward_history, length_history
+
+def plot_training_stats(reward_history, length_history):
+    """
+    绘制训练统计图：总奖励随回合的变化 & 回合步数随回合的变化
+    """
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+
+    # 1. 绘制总奖励图 (Total Rewards)
+    ax1.plot(reward_history, color='#1f77b4', linewidth=1) # 使用标准蓝色
+    ax1.set_ylabel('Total rewards', fontsize=12)
+    ax1.grid(True, linestyle=':', alpha=0.6)
+    # 限制 y 轴范围，防止极小的惩罚值拉低整体观感
+    # ax1.set_ylim([min(reward_history)-5, 5]) 
+
+    # 2. 绘制回合步数图 (Episode Length)
+    ax2.plot(length_history, color='#1f77b4', linewidth=1)
+    ax2.set_xlabel('Episode index', fontsize=12)
+    ax2.set_ylabel('Episode length', fontsize=12)
+    ax2.grid(True, linestyle=':', alpha=0.6)
+
+    plt.tight_layout()
 
 # --- 运行入口 ---
 if __name__ == "__main__":
@@ -129,12 +158,15 @@ if __name__ == "__main__":
     
     # 3. 运行 SARSA 算法
     print("开始训练...")
-    final_v = solver.SARSA(max_iter=20000, alpha=0.1)
+    final_v, reward_hist, length_hist = solver.SARSA(max_iter=500, alpha=0.1)
 
     # 4. 可视化结果
     print("训练完成，正在渲染...")
+    plot_training_stats(reward_hist, length_hist)
+
     solver.show_policy()
     solver.show_state_value(final_v)
     env.plot_title("SARSA Results")
+
     env.render(block=True)
 
