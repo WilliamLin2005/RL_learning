@@ -46,8 +46,8 @@ class Q_learning:
                 prob = self.policy[state, action]
                 if prob > 0: # 只画有概率的动作
                     self.env.render_.draw_action(pos=self.env.state2pos(state),
-                                                 toward=prob * 0.4 * self.env.action_to_direction[action],
-                                                 radius=prob * 0.1)
+                                                 toward=prob * 0.25 * self.env.action_to_direction[action],
+                                                 radius=prob * 0.05)
 
     def show_state_value(self, state_value, y_offset=0.2):
         for state in range(self.state_space_size):
@@ -112,7 +112,7 @@ class Q_learning:
                 action = next_action
 
                 iteration += 1
-                if iteration>300:
+                if iteration>1000:
                     break
             reward_history.append(total_reward)
             length_history.append(step_count)   
@@ -144,10 +144,35 @@ def plot_training_stats(reward_history, length_history):
 
 # --- 运行入口 ---
 if __name__ == "__main__":
-    # 1. 初始化环境 (网格世界)
-    env = GridEnv(size=5, 
-                  target=[2, 3],
-                  forbidden=[[1, 1], [2, 1], [2, 2], [1, 3], [3, 3], [1, 4]],
+    # ==========================================
+    # 15x15 复杂迷宫地形设计
+    # ==========================================
+    size = 15
+    target = [13, 13]  # 终点在右下角
+    
+    forbidden = [
+        # 1. 左侧竖墙 "|" (故意留了上下两个缺口)
+        [3, 1], [3, 2], [3, 3], [3, 4], [3, 5], [3, 6], [3, 7], [3, 8], [3, 9], [3, 10], [3, 11],
+        
+        # 2. 中间横墙 "-" (迫使Agent往下走)
+        [4, 6], [5, 6], [6, 6], [7, 6], [8, 6], [9, 6], [10, 6],
+        
+        # 3. 中心区域倒 "L" 型陷阱 (死胡同)
+        [7, 2], [8, 2], [9, 2], [10, 2],
+        [10, 3], [10, 4],
+        
+        # 4. 右侧竖墙 "|"
+        [11, 2], [11, 3], [11, 4], [11, 5], [11, 6], [11, 7], [11, 8],
+        
+        # 5. 终点附近的 "U" 型包围圈 (只能从上方进入)
+        [12, 12], [12, 13], [12, 14], # 左墙
+        [13, 14],                     # 底墙
+        [14, 12], [14, 13], [14, 14]  # 右墙
+    ]
+
+    env = GridEnv(size=size, 
+                  target=target, 
+                  forbidden=forbidden, 
                   render_mode='')
     
     # 2. 实例化算法

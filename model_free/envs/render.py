@@ -43,7 +43,8 @@ class Render:
             return
 
         if self.ax is None:
-            self.fig = plt.figure(figsize=(10, 10), dpi=self.size * 20)
+            fig_size_base = max(8, self.size * 0.7) # 基础尺寸，最小为 8x8
+            self.fig = plt.figure(figsize=(fig_size_base, fig_size_base), dpi=max(80, self.size * 10))
             self.ax = self.fig.add_subplot(111)
         else:
             if self.fig is None:
@@ -55,8 +56,8 @@ class Render:
         # Keep cells square and use the grid world coordinate convention:
         # x increases to the right, y increases downward.
         self.ax.set_aspect('equal', adjustable='box')
-        self.ax.set_xlim(0, self.size)
-        self.ax.set_ylim(self.size, 0)
+        self.ax.set_xlim(-0.5, self.size - 0.5)
+        self.ax.set_ylim(self.size - 0.5, -0.5)
 
         # Major ticks define grid boundaries; minor ticks label cell indices at centers.
         self.ax.set_xticks(np.arange(0, self.size + 1), minor=False)
@@ -201,7 +202,7 @@ class Render:
         """
         self._ensure_axes()
         self.ax.text(pos[0] + 0.5 + x_offset, pos[1] + 0.5 + y_offset, word,
-                     size=size_discount * (30 - 2 * self.size),
+                     size=size_discount * (self.fig.get_figwidth() / self.size) * 8,
                      ha='center', va='center', color=color)
 
     def upgrade_agent(self, pos: Union[list, np.ndarray, tuple], action,
