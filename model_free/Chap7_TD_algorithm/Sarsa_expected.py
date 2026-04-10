@@ -21,7 +21,7 @@ from RL_learning.model_free.envs.grid_env import GridEnv
 import matplotlib.pyplot as plt
 
 #MC_EXPLORING STARTS 调参的哲学
-class SARSA:
+class SARSA_expected:
     def __init__(self, env):
         self.gamma = 0.9
         self.env = env
@@ -66,20 +66,17 @@ class SARSA:
             
             done = terminated
             
-            # 3. 按当前 policy 的概率去“采样”下一个动作，绝对不能用 np.max!
-            next_action = np.random.choice(self.action_space_size, p=self.policy[new_state, :]) 
             
             experience = {
                 'state_t': start_state,
                 'action_t': start_action,
                 'reward': reward,
                 'state_tp1': new_state,
-                'action_tp1': next_action,
                 'done': done
             }
             return experience
 
-    def SARSA(self,max_iter=1000,alpha=0.5):
+    def SARSA_expected(self,max_iter=1000,alpha=0.5):
         reward_history = []
         length_history = []
         for episode in tqdm(range(max_iter)):
@@ -91,17 +88,17 @@ class SARSA:
             action = np.random.choice(self.action_space_size, p=self.policy[state, :])
             done = False
             td_error = 0
-            iteration = 0
             total_reward = 0
             step_count = 0
             while not done:
                 experience = self.obtain_experience(state, action)
-                state, action, reward, next_state, next_action, done = experience['state_t'], experience['action_t'], experience['reward'], experience['state_tp1'], experience['action_tp1'], experience['done']
+                state, action, reward, next_state, done = experience['state_t'], experience['action_t'], experience['reward'], experience['state_tp1'], experience['done']
                 total_reward += reward
                 step_count += 1
 
                 # 2. 更新 Q 表
-                td_target = reward + self.gamma * self.qsa_value[next_state, next_action] * (1 - done)
+                expected_q_next = np.sum(self.policy[next_state, :] * self.qsa_value[next_state, :])
+                td_target = reward + self.gamma * expected_q_next * (1 - done)
                 td_error =  self.qsa_value[state, action]- td_target
                 self.qsa_value[state, action] -= alpha * td_error
                     
@@ -112,10 +109,9 @@ class SARSA:
 
                 #4.更新状态和动作
                 state = next_state
-                action = next_action
+                action = np.random.choice(self.action_space_size, p=self.policy[state, :])
 
-                iteration += 1
-                if iteration>200:
+                if step_count>400:
                     break
             reward_history.append(total_reward)
             length_history.append(step_count)   
@@ -154,11 +150,11 @@ if __name__ == "__main__":
                   render_mode='')
     
     # 2. 实例化算法
-    solver = SARSA(env)
+    solver = SARSA_expected(env)
     
     # 3. 运行 SARSA 算法
     print("开始训练...")
-    final_v, reward_hist, length_hist = solver.SARSA(max_iter=500, alpha=0.1)
+    final_v, reward_hist, length_hist = solver.SARSA_expected(max_iter=1000, alpha=0.1)
 
     # 4. 可视化结果
     print("训练完成，正在渲染...")
@@ -166,6 +162,7 @@ if __name__ == "__main__":
 
     solver.show_policy()
     solver.show_state_value(final_v)
-    env.plot_title("SARSA Results")
+    env.plot_title("SARSA_Expected Results")
 
     env.render(block=True)
+
