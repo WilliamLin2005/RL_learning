@@ -23,8 +23,8 @@ from collections import deque
 
 #MC_EXPLORING STARTS 调参的哲学
 class n_step_SARSA:
-    def __init__(self, env, n_step=1, alpha=0.1):
-        self.gamma = 0.9
+    def __init__(self, env, n_step=1, alpha=0.001):
+        self.gamma = 0.98
         self.env = env
         self.n_step = n_step
         self.alpha = alpha
