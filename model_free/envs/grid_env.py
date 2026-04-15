@@ -65,7 +65,7 @@ class GridEnv(gym.Env):
         # - [0, 1, -1, -10]   # small forbidden penalty, strong overflow penalty
         # - [-1, 0, -10, -10] # chapter7: step cost -1, target 0
         # - [0, 1, -1, -1]    # reward list for TD linear: small penalty for forbidden/overflow,
-        default_reward_list = [-1, 0, -10, -10] # reward list chapter8
+        default_reward_list = [-5, 100, -20, -20] # reward list chapter8
         reward_list = default_reward_list if reward_list is None else reward_list
         if len(reward_list) != 4:
             raise ValueError("reward_list must have length 4: [other, target, forbidden, overflow]")
@@ -152,36 +152,7 @@ class GridEnv(gym.Env):
         return pos[1] * self.size + pos[0]
 
     def psa_rsa_init(self):
-        """
-        初始化网格世界的 psa 和 rsa
-        赵老师在b站评论区回答过 关于 rsa设计的问题
-        原问题是；
-        B友：老师您好，在spinning up 7.2.5里有写到
-        Reward depends on the current state of the world, the action just taken, and the next state of the world.
-        但您提到Rewad depends on the state and action, but not the next state.不知道reward 和 next state的关系是怎样的？
-
-        答案如下：
-        赵老师：这是一个很细小、但是很好的问题，说明你思考了。也许其他人也会有这样的疑问，我来详细解答一下。
-        1）从贝尔曼公式和数学的角度来说，r是由p(r|s,a)决定的，所以从数学的角度r依赖于s,a，而不依赖于下一个状态s’。这是很简明的。
-        2）举例，如果在target state刚好旁边是墙，agent试图撞墙又弹回来target state，这时候不应该给正r，而应该是给负r，因为r依赖于a而不是下一个状态。
-        3）但是r是否和s’无关呢？实际是有关系的，否则为什么每次进到target state要得到正r呢？不过，这也可以等价理解成是在之前那个状态采取了好的动作才得到了正r。
-        总结：r确实和s’有关，但是这种关系被设计蕴含到了条件概率p(r|s,a)中去。
-        故而这里的rsa蕴含了next_state的信息
-        :return:
-        """
-        """
-        Psa 和 Rsa 是三维的，因为它们需要表示在每个状态下，对于每个可能的动作，都有一个概率分布或奖励值。
-        对于 Psa，第一维表示当前状态，第二维表示当前动作，第三维表示下一个状态。Psa[state, action, next_state] 表示在 state 状态下，执行 action 动作后，转移到 next_state 的概率。
-        对于 Rsa，第一维表示当前状态，第二维表示当前动作，第三维表示奖励值。Rsa[state, action, reward] 表示在 state 状态下，执行 action 动作后，得到 reward 奖励的概率。
-        这样的三维结构可以很好地表示状态、动作和奖励之间的关系，是强化学习中常用的数据结构。
-        """
-        """
-        Psa 和 Rsa 中的概率体现在它们的值上。具体来说：
-        对于 Psa，Psa[state, action, next_state] 的值表示在 state 状态下，执行 action 动作后，转移到 next_state 的概率。例如，如果 Psa[1, 2, 3] = 0.5，那么这就表示在状态 1 下执行动作 2 后，转移到状态 3 的概率是 0.5。
-        对于 Rsa，Rsa[state, action, reward] 的值表示在 state 状态下，执行 action 动作后，得到 reward 奖励的概率。例如，如果 Rsa[1, 2, 3] = 0.5，那么这就表示在状态 1 下执行动作 2 后，得到奖励 3 的概率是 0.5。
-        这两个矩阵的每个元素都是一个概率值，这就是概率在数据结构中的体现。
-        """
-
+        
         state_size = self.size ** 2
         self.Psa = np.zeros(shape=(state_size, self.action_space_size, state_size), dtype=float)
         self.Rsa = np.zeros(shape=(state_size, self.action_space_size, len(self.reward_list)), dtype=float)
