@@ -66,7 +66,6 @@ class DQNAgent:
     def __init__(self,env):
         self.gamma=0.98
         self.learning_rate=0.05
-        self.epsilon=0.1
         self.buffer_size=10000
         self.batch_size=64
         self.env = env
@@ -181,7 +180,7 @@ class DQNAgent:
                 next_state = self.env.pos2state(obs["agent"])
                 done = terminated
                 
-                # 无条件调用 update，在 update 内部处理经验添加和按频率反向传播
+                # 调用 update，在 update 内部处理经验添加和按频率反向传播
                 self.update(state, action, reward, next_state, done)
 
                 state = next_state

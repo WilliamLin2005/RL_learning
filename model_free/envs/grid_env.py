@@ -10,7 +10,7 @@ from gymnasium.core import RenderFrame, ActType, ObsType
 # from gym.core import RenderFrame, ActType, ObsType
 
 #随机数生成器将产生相同的随机数序列, 这在需要可重复结果的情况下非常有用
-np.random.seed(2)
+np.random.seed(1)
 from . import render
 
 
@@ -65,7 +65,7 @@ class GridEnv(gym.Env):
         # - [0, 1, -1, -10]   # small forbidden penalty, strong overflow penalty
         # - [-1, 0, -10, -10] # chapter7: step cost -1, target 0
         # - [0, 1, -1, -1]    # reward list for TD linear: small penalty for forbidden/overflow,
-        default_reward_list = [-5, 100, -20, -20] # reward list chapter8
+        default_reward_list = [-1, 10, -10, -10] # reward list chapter8
         reward_list = default_reward_list if reward_list is None else reward_list
         if len(reward_list) != 4:
             raise ValueError("reward_list must have length 4: [other, target, forbidden, overflow]")
